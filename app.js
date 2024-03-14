@@ -6,15 +6,9 @@ const cors = require("cors");
 require("./db/conn");
 const router = require("./Routes/router");
 
-const port = 8001;
+const port = 8080;
 
 
-// app.get("/",(req,res)=>{
-//     res.send("server start")
-// });
-
-
-// middleware
 app.use(express.json())
 app.use(cors());
 

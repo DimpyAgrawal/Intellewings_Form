@@ -1,171 +1,113 @@
-import React, { useState, useEffect, useContext } from 'react'
+import React, { useState, useEffect, useContext } from 'react';
 import RemoveRedEyeIcon from '@mui/icons-material/RemoveRedEye';
 import CreateIcon from '@mui/icons-material/Create';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { NavLink } from 'react-router-dom';
 import { adddata, deldata } from './context/ContextProvider';
-import { updatedata } from './context/ContextProvider'
-
-
-
+import { updatedata } from './context/ContextProvider';
 
 const Home = () => {
-
-    const [getuserdata, setUserdata] = useState([]);
-    console.log(getuserdata);
-
+    const [userList, setUserList] = useState([]);
     const { udata, setUdata } = useContext(adddata);
-
-    const {updata, setUPdata} = useContext(updatedata);
-
-    const {dltdata, setDLTdata} = useContext(deldata);
-
-    const getdata = async () => {
-        
-        const res = await fetch("/getusers", {
-            method: "GET",
-            headers: {
-                "Content-Type": "application/json"
-            }
-        });
-
-        const data = await res.json();
-        console.log(data);
-
-        if (res.status === 422 || !data) {
-            console.log("error ");
-
-        } else {
-            setUserdata(data)
-            console.log("get data");
-
-        }
-    }
+    const { updata, setUPdata } = useContext(updatedata);
+    const { dltdata, setDLTdata } = useContext(deldata);
 
     useEffect(() => {
-        getdata();
-    }, [])
+        fetchData();
+    }, []);
 
-    const deleteuser = async (id) => {
-
-        const res2 = await fetch(`/deleteuser/${id}`, {
-            method: "DELETE",
-            headers: {
-                "Content-Type": "application/json"
+    const fetchData = async () => {
+        try {
+            const res = await fetch("/getusers");
+            if (res.ok) {
+                const data = await res.json();
+                setUserList(data);
+            } else {
+                console.error("Failed to fetch data");
             }
-        });
-
-        const deletedata = await res2.json();
-        console.log(deletedata);
-
-        if (res2.status === 422 || !deletedata) {
-            console.log("error");
-        } else {
-            console.log("user deleted");
-            setDLTdata(deletedata)
-            getdata();
+        } catch (error) {
+            console.error("Error fetching data:", error);
         }
+    };
 
-    }
-
+    const deleteUser = async (id) => {
+        try {
+            const res = await fetch(`/deleteuser/${id}`, {
+                method: "DELETE"
+            });
+            if (res.ok) {
+                const deletedData = await res.json();
+                setDLTdata(deletedData);
+                fetchData();
+            } else {
+                console.error("Failed to delete user");
+            }
+        } catch (error) {
+            console.error("Error deleting user:", error);
+        }
+    };
 
     return (
-
         <>
-            {
-                udata ?
-                    <>
-                        <div class="alert alert-success alert-dismissible fade show" role="alert">
-                            <strong>{udata.name}</strong>  added succesfully!
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                        </div>
-                    </> : ""
-            }
-            {
-                updata ?
-                    <>
-                        <div class="alert alert-success alert-dismissible fade show" role="alert">
-                            <strong>{updata.name}</strong>  updated succesfully!
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                        </div>
-                    </> : ""
-            }
-
-            {
-                dltdata ?
-                    <>
-                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                            <strong>{dltdata.name}</strong>  deleted succesfully!
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                        </div>
-                    </> : ""
-            }
-
-
+            {udata && (
+                <div className="alert alert-success alert-dismissible fade show" role="alert">
+                    <strong>{udata.firstName}</strong> added successfully!
+                    <button type="button" className="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            )}
+            {updata && (
+                <div className="alert alert-success alert-dismissible fade show" role="alert">
+                    <strong>{updata.firstName}</strong> updated successfully!
+                    <button type="button" className="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            )}
+            {dltdata && (
+                <div className="alert alert-danger alert-dismissible fade show" role="alert">
+                    <strong>{dltdata.firstName}</strong> deleted successfully!
+                    <button type="button" className="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            )}
             <div className="mt-5">
                 <div className="container">
                     <div className="add_btn mt-2 mb-2">
                         <NavLink to="/register" className="btn btn-primary">Add data</NavLink>
                     </div>
-
-                    <table class="table">
+                    <table className="table">
                         <thead>
                             <tr className="table-dark">
-                                <th scope="col">id</th>
-                                <th scope="col">Username</th>
-                                <th scope="col">email</th>
-                                <th scope="col">Job</th>
-                                <th scope="col">Number</th>
-                                <th scope="col"></th>
+                                <th scope="col">ID</th>
+                                <th scope="col">First Name</th>
+                                <th scope="col">Middle Name</th>
+                                <th scope="col">Last Name</th>
+                                <th scope="col">Email</th>
+                                <th scope="col">Phone Number 1</th>
+                                <th scope="col">Phone Number 2</th>
+                                <th scope="col">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-
-                            {
-                                getuserdata.map((element, id) => {
-                                    return (
-                                        <>
-                                            <tr>
-                                                <th scope="row">{id + 1}</th>
-                                                <td>{element.name}</td>
-                                                <td>{element.email}</td>
-                                                <td>{element.work}</td>
-                                                <td>{element.mobile}</td>
-                                                <td className="d-flex justify-content-between">
-                                                    <NavLink to={`view/${element.id}`}> <button className="btn btn-success"><RemoveRedEyeIcon /></button></NavLink>
-                                                    <NavLink to={`edit/${element.id}`}>  <button className="btn btn-primary"><CreateIcon /></button></NavLink>
-                                                    <button className="btn btn-danger" onClick={() => deleteuser(element.id)}><DeleteOutlineIcon /></button>
-                                                </td>
-                                            </tr>
-                                        </>
-                                    )
-                                })
-                            }
+                            {userList.map((user, index) => (
+                                <tr key={user.id}>
+                                    <th scope="row">{index + 1}</th>
+                                    <td>{user.firstName}</td>
+                                    <td>{user.middleName}</td>
+                                    <td>{user.lastName}</td>
+                                    <td>{user.email}</td>
+                                    <td>{user.phoneNumber1}</td>
+                                    <td>{user.phoneNumber2}</td>
+                                    <td className="d-flex justify-content-between">
+                                        <NavLink to={`view/${user.id}`}><button className="btn btn-success"><RemoveRedEyeIcon /></button></NavLink>
+                                        <NavLink to={`edit/${user.id}`}><button className="btn btn-primary"><CreateIcon /></button></NavLink>
+                                        <button className="btn btn-danger" onClick={() => deleteUser(user.id)}><DeleteOutlineIcon /></button>
+                                    </td>
+                                </tr>
+                            ))}
                         </tbody>
                     </table>
-
-
                 </div>
             </div>
         </>
-    )
-}
+    );
+};
 
-export default Home
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+export default Home;

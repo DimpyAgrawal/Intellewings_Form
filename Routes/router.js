@@ -2,107 +2,92 @@ const express = require("express");
 const router = new express.Router();
 const conn = require("../db/conn");
 
-
-// register user data
+// Create a new contact
 router.post("/create", (req, res) => {
+    const { firstName, middleName, lastName, email, phoneNumber1, phoneNumber2 } = req.body;
 
-    // console.log(req.body);
-
-    const { name, email, age, mobile, work, add, desc } = req.body;
-
-    if (!name || !email || !age || !mobile || !work || !add || !desc) {
-        res.status(422).json("plz fill the all data");
+    if (!firstName || !lastName || !email) {
+        return res.status(422).json("Please provide first name, last name, and email");
     }
+
+    const userData = {
+        firstName,
+        middleName,
+        lastName,
+        email,
+        phoneNumber1,
+        phoneNumber2
+    };
 
     try {
-        conn.query("SELECT * FROM users WHERE email = ?", email, (err, result) => {
-            if (result.length) {
-                res.status(422).json("This Data is Already Exist")
-            } else {
-                conn.query("INSERT INTO users SET ?", { name, email, age, mobile, work, add, desc }, (err, result) => {
-                    if (err) {
-                        console.log("err" + err);
-                    } else {
-                        res.status(201).json(req.body);
-                    }
-                })
+        conn.query("SELECT * FROM contacts WHERE email = ?", email, (err, result) => {
+            if (err) {
+                return res.status(500).json({ message: "Internal Server Error" });
             }
-        })
+            if (result.length > 0) {
+                return res.status(409).json({ message: "This contact already exists" });
+            } else {
+                conn.query("INSERT INTO contacts SET ?", userData, (err, result) => {
+                    if (err) {
+                        return res.status(500).json({ message: "Failed to create contact" });
+                    }
+                    return res.status(201).json({ message: "Contact created successfully", data: userData });
+                });
+            }
+        });
     } catch (error) {
-        res.status(422).json(error);
+        res.status(500).json({ message: "Internal Server Error" });
     }
-
 });
 
-
-
-
-// get userdata
-
-router.get("/getusers",(req,res)=>{
-
-    conn.query("SELECT * FROM users",(err,result)=>{
-        if(err){
-            res.status(422).json("nodata available");
-        }else{
-            res.status(201).json(result);
+// Get all contacts
+router.get("/getcontacts", (req, res) => {
+    conn.query("SELECT * FROM contacts", (err, result) => {
+        if (err) {
+            return res.status(500).json({ message: "Internal Server Error" });
         }
-    })
+        return res.status(200).json(result);
+    });
 });
 
+// Delete a contact
+router.delete("/deletecontact/:id", (req, res) => {
+    const id = req.params.id;
 
-// user delete api
-
-router.delete("/deleteuser/:id",(req,res)=>{
-
-    const {id} = req.params;
-
-    conn.query("DELETE FROM users WHERE id = ? ",id,(err,result)=>{
-        if(err){
-            res.status(422).json("error");
-        }else{
-            res.status(201).json(result);
+    conn.query("DELETE FROM contacts WHERE id = ?", id, (err, result) => {
+        if (err) {
+            return res.status(500).json({ message: "Internal Server Error" });
         }
-    })
+        return res.status(200).json({ message: "Contact deleted successfully" });
+    });
 });
 
+// Get a single contact by ID
+router.get("/getcontact/:id", (req, res) => {
+    const id = req.params.id;
 
-
-// get single user
-
-router.get("/induser/:id",(req,res)=>{
-
-    const {id} = req.params;
-
-    conn.query("SELECT * FROM users WHERE id = ? ",id,(err,result)=>{
-        if(err){
-            res.status(422).json("error");
-        }else{
-            res.status(201).json(result);
+    conn.query("SELECT * FROM contacts WHERE id = ?", id, (err, result) => {
+        if (err) {
+            return res.status(500).json({ message: "Internal Server Error" });
         }
-    })
+        if (result.length === 0) {
+            return res.status(404).json({ message: "Contact not found" });
+        }
+        return res.status(200).json(result[0]);
+    });
 });
 
-
-// update users api
-
-
-router.patch("/updateuser/:id",(req,res)=>{
-
-    const {id} = req.params;
-
+// Update a contact by ID
+router.patch("/updatecontact/:id", (req, res) => {
+    const id = req.params.id;
     const data = req.body;
 
-    conn.query("UPDATE users SET ? WHERE id = ? ",[data,id],(err,result)=>{
-        if(err){
-            res.status(422).json({message:"error"});
-        }else{
-            res.status(201).json(result);
+    conn.query("UPDATE contacts SET ? WHERE id = ?", [data, id], (err, result) => {
+        if (err) {
+            return res.status(500).json({ message: "Internal Server Error" });
         }
-    })
+        return res.status(200).json({ message: "Contact updated successfully" });
+    });
 });
 
 module.exports = router;
-
-
-
